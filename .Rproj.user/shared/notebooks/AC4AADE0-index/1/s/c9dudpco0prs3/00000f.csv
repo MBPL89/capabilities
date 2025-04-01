@@ -1,0 +1,7 @@
+"0","#| echo: false"
+"0","# Define color scale based on centrality"
+"0","color_palette <- brewer.pal(9, ""Blues"")"
+"0","nodes_df$color <- color_palette[cut(nodes_df$degree, breaks = 9, labels = FALSE)]"
+"0",""
+"0","# Define node sizes based on centrality"
+"0","nodes_df$size <- (nodes_df$degree + 1) * 5  # Scale up for visibility"

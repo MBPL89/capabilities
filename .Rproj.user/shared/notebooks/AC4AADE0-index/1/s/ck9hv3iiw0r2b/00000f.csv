@@ -1,0 +1,7 @@
+"0","#| echo: false"
+"0","#| warning: false"
+"0","nodes_df <- nodes_df %>%"
+"0","  left_join("
+"0","    df %>% select(name = c_name, definition) %>% distinct(),"
+"0","    by = c(""id"" = ""name"")"
+"0","  )"

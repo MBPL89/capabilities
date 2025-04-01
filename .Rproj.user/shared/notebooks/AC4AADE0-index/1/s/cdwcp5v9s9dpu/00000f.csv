@@ -1,0 +1,5 @@
+"0","#| echo: false"
+"0","# Normalize centrality values for visualization"
+"0","nodes_df$degree <- degree_centrality[match(nodes_df$id, names(degree_centrality))]"
+"0","nodes_df$betweenness <- betweenness_centrality[match(nodes_df$id, names(betweenness_centrality))]"
+"0","nodes_df$closeness <- closeness_centrality[match(nodes_df$id, names(closeness_centrality))]"

@@ -1,0 +1,13 @@
+"0","#| echo: false"
+"0","#| fig-cap: ""Banking Business Capabilities"""
+"0","# Create interactive network graph"
+"0","visNetwork(nodes_df, edges_df) %>%"
+"0","  visEdges(arrows = ""to"") %>%  # Add arrowheads"
+"0","  visNodes(shape = ""dot"") %>%"
+"0","  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%"
+"0","  visLegend(addNodes = TRUE, useGroups = FALSE) %>%"
+"0","  visLayout(randomSeed = 42) %>%  # Consistent layout"
+"0","  visPhysics(enabled = TRUE)  # Enable force-directed layout"
+"2","Error in visLegend(., addNodes = TRUE, useGroups = FALSE) : 
+  addNodes must be a data.frame or a list
+"

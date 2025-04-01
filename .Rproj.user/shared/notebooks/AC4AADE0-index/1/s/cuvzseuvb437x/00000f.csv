@@ -1,0 +1,4 @@
+"0","#| echo: false"
+"0","# Create nodes (unique c_name and sub_name)"
+"0","nodes <- unique(c(df$c_name, df$sub_name))"
+"0","nodes_df <- data.frame(id = nodes, label = nodes)"

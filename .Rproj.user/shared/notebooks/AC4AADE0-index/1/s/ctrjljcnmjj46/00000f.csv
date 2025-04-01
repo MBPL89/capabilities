@@ -1,0 +1,5 @@
+"0","#| echo: false"
+"0","# Calculate centrality measures"
+"0","degree_centrality <- degree(graph, mode = ""all"")"
+"0","betweenness_centrality <- betweenness(graph, normalized = TRUE)"
+"0","closeness_centrality <- closeness(graph, normalized = TRUE)"
