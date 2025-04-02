@@ -1,5 +1,5 @@
 "0","#| echo: false"
 "0","# Create edges (relationships between nodes)"
 "0","edges_df <- df %>%"
-"0","  mutate(relation = gsub("" "", ""_"", relation)) %>%  # Replace spaces in relation names"
+"0","  mutate(relation = gsub("" "", ""_"", relation)) %>%"
 "0","  select(from = c_name, to = sub_name, label = relation)"

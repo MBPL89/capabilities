@@ -1,4 +1,0 @@
-"0","#| echo: false"
-"0","graph <- graph_from_data_frame(d = edges_df, vertices = nodes_df, directed = TRUE)"
-"2","Warning: [38;5;232mIn `d`, `NA` elements were replaced with string ""NA"".[39m"
-"2","Warning: [38;5;232mIn `vertices[,1]`, `NA` elements were replaced with string ""NA"".[39m"

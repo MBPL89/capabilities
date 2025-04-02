@@ -15,13 +15,14 @@ library(readr)
 library(dplyr)
 library(RColorBrewer)
 library(DT)
+library(tidyverse)
 ```
 
 ```{r}
 #| echo: false
 #| warning: false
 # Load CSV file
-csv_file <- "capab_rmd.csv"  # Change to your actual file path
+csv_file <- "capab_rmd_cat.csv"  # Change to your actual file path
 df <- read_csv(csv_file)
 ```
 
@@ -33,18 +34,55 @@ df <- distinct(df)
 
 ```{r}
 #| echo: false
-# Create nodes (unique c_name and sub_name)
-nodes <- unique(c(df$c_name, df$sub_name))
-nodes_df <- data.frame(id = nodes, label = nodes)
+# Create unique node list (ensuring no duplicates)
+nodes_info <- df %>%
+  select(name = c_name, category, definition) %>%
+  bind_rows(df %>% select(name = sub_name)) %>%
+  distinct(name, .keep_all = TRUE) 
+nodes_info <- nodes_info %>%
+  mutate(category=replace_na(category, "Other"))
+```
+
+```{r}
+#| echo: false
+#| warning: false
+# Assign groups based on c_type (ensuring consistent order)
+category_levels <- unique(nodes_info$category)
+nodes_info$group <- as.numeric(factor(nodes_info$category, levels = category_levels)) 
+
+# Define color palette based on the number of unique categories
+num_categories <- length(category_levels)
+color_palette <- brewer.pal(min(num_categories, 9), "Set1")  # Supports up to 9 distinct colors
+
+# Define node shapes (cycling through if there are more categories)
+shapes <- c("dot", "triangle", "square", "diamond", "star", "hexagon", "ellipse", "box", "icon")
+nodes_info$shape <- shapes[(nodes_info$group - 1) %% length(shapes) + 1]  # Cycles if needed
+
+# Assign color based on category
+nodes_info$color <- color_palette[(nodes_info$group - 1) %% length(color_palette) + 1]
 ```
 
 ```{r}
 #| echo: false
 # Create edges (relationships between nodes)
 edges_df <- df %>%
-  mutate(relation = gsub(" ", "_", relation)) %>%  # Replace spaces in relation names
+  mutate(relation = gsub(" ", "_", relation)) %>%
   select(from = c_name, to = sub_name, label = relation)
 ```
+
+```{r}
+#| echo: false
+#| warning: false
+# Ensure nodes_df only contains unique nodes before creating graph
+nodes_df <- data.frame(
+  id = nodes_info$name, 
+  label = nodes_info$name, 
+  group = nodes_info$group, 
+  color = nodes_info$color, 
+  shape = nodes_info$shape
+)
+```
+
 
 ```{r}
 #| echo: false
@@ -54,28 +92,31 @@ graph <- graph_from_data_frame(d = edges_df, vertices = nodes_df, directed = TRU
 
 ```{r}
 #| echo: false
-# Calculate centrality measures
-degree_centrality <- degree(graph, mode = "all")
-betweenness_centrality <- betweenness(graph, normalized = TRUE)
-closeness_centrality <- closeness(graph, normalized = TRUE)
+# Calculate Centrality Metrics
+degree_centrality <- degree(graph, mode = "all")  # Count all incoming/outgoing edges
+closeness_centrality <- closeness(graph, mode = "all", normalized = TRUE)  # Closeness measure
+
+# Merge centrality scores into nodes_info
+nodes_info$degree_centrality <- degree_centrality[match(nodes_info$name, names(degree_centrality))]
+nodes_info$closeness_centrality <- closeness_centrality[match(nodes_info$name, names(closeness_centrality))]
+
+# Fix NA values (if a node has no edges, centrality might be NA)
+nodes_info$degree_centrality[is.na(nodes_info$degree_centrality)] <- 0
+nodes_info$closeness_centrality[is.na(nodes_info$closeness_centrality)] <- 0
+
+# Scale node size based on degree centrality
+nodes_df$size <- (nodes_info$degree_centrality + 1) * 5  # Scale up
 ```
 
 ```{r}
 #| echo: false
-# Normalize centrality values for visualization
-nodes_df$degree <- degree_centrality[match(nodes_df$id, names(degree_centrality))]
-nodes_df$betweenness <- betweenness_centrality[match(nodes_df$id, names(betweenness_centrality))]
-nodes_df$closeness <- closeness_centrality[match(nodes_df$id, names(closeness_centrality))]
-```
-
-```{r}
-#| echo: false
-# Define color scale based on centrality
-color_palette <- brewer.pal(9, "Blues")
-nodes_df$color <- color_palette[cut(nodes_df$degree, breaks = 9, labels = FALSE)]
-
-# Define node sizes based on centrality
-nodes_df$size <- (nodes_df$degree + 1) * 5  # Scale up for visibility
+#| warning: false
+# Create a proper legend
+legend_df <- data.frame(
+  label = category_levels,
+  shape = shapes[1:num_categories],  # Match unique categories
+  color = color_palette[1:num_categories]
+)
 ```
 
 ## Network graph
@@ -86,11 +127,16 @@ nodes_df$size <- (nodes_df$degree + 1) * 5  # Scale up for visibility
 # Create interactive network graph
 visNetwork(nodes_df, edges_df) %>%
   visEdges(arrows = "to") %>%  # Add arrowheads
-  visNodes(shape = "dot") %>%
-  visGroups(groupname = "Nodes", color = "lightblue") %>%
+  visNodes(size = nodes_df$size) %>%
+  visGroups(groupname = "1", color = color_palette[1], shape = shapes[1]) %>%
+  visGroups(groupname = "2", color = color_palette[2], shape = shapes[2]) %>%
+  visGroups(groupname = "3", color = color_palette[3], shape = shapes[3]) %>%
+  visGroups(groupname = "4", color = color_palette[4], shape = shapes[4]) %>%
+  visGroups(groupname = "5", color = color_palette[5], shape = shapes[5]) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
   visLayout(randomSeed = 42) %>%  # Consistent layout
-  visPhysics(enabled = TRUE)  # Enable force-directed layout
+  visPhysics(enabled = TRUE) %>%
+  visLegend(addNodes = legend_df, useGroups = FALSE)
 ```
 
 
@@ -111,9 +157,9 @@ nodes_df <- nodes_df %>%
 #| warning: false
 # Create interactive datatable of nodes with definitions
 datatable(
-  nodes_df %>% select(Node = id, Degree = degree, Betweenness = betweenness, Closeness = closeness, Definition = definition),
-  options = list(pageLength = 10, autoWidth = TRUE),
+  nodes_info %>% select(name, category, definition, degree_centrality, closeness_centrality),
+  options = list(pageLength = 10, searchHighlight = TRUE),
   rownames = FALSE,
-  caption = "Nodes Table with Centrality and Definitions"
+  caption = "Nodes, Definitions, Categories, and Centrality Metrics"
 )
 ```
